@@ -376,6 +376,7 @@ async def ping(ctx):
         except discord.Forbidden:
             await ctx.respond("Sorry, I don't have permission to do that!")
 
+
 @bot.slash_command(name="purge", guild_ids=[1130925161579806751], description="Delete a specified number of messages.")
 async def purge(ctx, amount: int):
 
@@ -471,6 +472,15 @@ async def g_roll(ctx, message_link: str):
         except (discord.NotFound, ValueError):
             await ctx.send("Invalid message link. Please provide a valid Discord message link.")
     
+bot_invite_link = "https://discord.com/api/oauth2/authorize?client_id=1130925454677782579&permissions=8&scope=bot"
+
+@bot.slash_command(name="invite", guild_ids=[1130925161579806751], description="Get the bot's invite link.")
+async def invite(ctx):
+    # Create the invite link as a markdown link
+    em = discord.Embed(title="Invite",description="")
+    em.add_field(name="Invite Link",value=f"[Click here to invite the bot!]({bot_invite_link})")
+    await ctx.send(embed=em)
+
 @bot.slash_command(name="help", guild_ids=[1130925161579806751], description="Display the list of available commands.")
 async def help(ctx):
     embed = discord.Embed(title="Utility Bot Commands", color=discord.Color.blue())
@@ -480,6 +490,8 @@ async def help(ctx):
         "/giveaway": "Start a giveaway. Usage: `/giveaway <duration_in_minutes> <prize>`",
         "/g-roll": "Re-roll the giveaway winner. Usage: `/g-roll <original_giveaway_message_link>`",
         "/help": "Display the list of available commands.",
+        "/botinfo": "Displays the bot info. Usage `/botinfo`",
+        "/invite": "Invite the bot to your server as well. Usage `/invite`",
         "/echo": "Make the bot repeat what you say in a specified channel. Usage: `/echo <channel_mention> <message>`",
         "/manualpost": "Manually post a job opening. Usage: `/manualpost <company_name> <link>`",
         "/clap": "Add clap emojis between each word. Usage: `/clap <message>`",
