@@ -25,7 +25,7 @@ bot = commands.Bot(intents = intents)
 async def play(ctx, url: str):
     # Check if the user is in a voice channel
     if ctx.author.voice is None or ctx.author.voice.channel is None:
-        await ctx.send("You need to be in a voice channel to use this command.")
+        await ctx.respond("You need to be in a voice channel to use this command.")
         return
 
     voice_channel = ctx.author.voice.channel
@@ -38,7 +38,7 @@ async def play(ctx, url: str):
         youtube = YouTube(url)
         video_url = youtube.streams.filter(only_audio=True).first().url
     except Exception as e:
-        await ctx.send("Error: Could not fetch the video. Please check the URL and try again.")
+        await ctx.respond("Error: Could not fetch the video. Please check the URL and try again.")
         print(e)
         return
 
@@ -50,31 +50,31 @@ async def play(ctx, url: str):
 async def pause(ctx):
     if ctx.voice_client and ctx.voice_client.is_playing():
         ctx.voice_client.pause()
-        await ctx.send("Song paused.")
+        await ctx.respond("Song paused.")
     else:
-        await ctx.send("No song is currently playing.")
+        await ctx.respond("No song is currently playing.")
 
 @bot.slash_command(name='resume', guild_ids=[1130925161579806751], description="Resume a song in your voice channel.")
 async def resume(ctx):
     if ctx.voice_client and ctx.voice_client.is_paused():
         ctx.voice_client.resume()
-        await ctx.send("Song resumed.")
+        await ctx.respond("Song resumed.")
     else:
-        await ctx.send("No song is paused.")
+        await ctx.respond("No song is paused.")
 
 @bot.slash_command(name='stop', guild_ids=[1130925161579806751], description="Stop a song in your voice channel.")
 async def stop(ctx):
     if ctx.voice_client and ctx.voice_client.is_playing():
         ctx.voice_client.stop()
-        await ctx.send("Song stopped.")
+        await ctx.respond("Song stopped.")
     else:
-        await ctx.send("No song is currently playing.")
+        await ctx.respond("No song is currently playing.")
 
 async def play_music(ctx, video_url):
     # Your music playing implementation using video_url
     # For example, you can use FFmpegPCMAudio to play audio from the video_url
     ctx.voice_client.play(discord.FFmpegPCMAudio(video_url))
-    await ctx.send(f"Now playing: {video_url}")
+    await ctx.respond(f"Now playing: {video_url}")
 
 bot.level_data = {}  # Store leveling data in memory
 
@@ -100,7 +100,7 @@ async def botinfo(ctx):
     embed.add_field(name="Description", value=bot_description, inline=False)
     embed.set_thumbnail(url=bot.user.avatar_url)
 
-    await ctx.send(embed=embed)
+    await ctx.respond(embed=embed)
 
 @bot.slash_command(name="serverinfo", guild_ids=[1130925161579806751], description="Get information about the server.")
 async def serverinfo(ctx):
@@ -143,9 +143,9 @@ async def serverinfo(ctx):
         embed.add_field(name="Verification Level", value=f":lock: {server.verification_level}", inline=True)
         embed.add_field(name="Default Notifications", value=f":bell: {server.default_notifications}", inline=True)
 
-        await ctx.send(embed=embed)
+        await ctx.respond(embed=embed)
     else:
-        await ctx.send("Server not found!")
+        await ctx.respond("Server not found!")
 
 
 
@@ -171,7 +171,7 @@ async def on_message(message):
 
         # Create a user entry in the level_data if it doesn't exist
         if user_id not in user_data:
-            user_data[user_id] = {"level": 1, "xp": 0}
+            user_data[user_id] = {"level": 1, "xp": 0,"afk": "no","afk-reason": ""}
 
         # Calculate XP based on the length of the message (you can adjust the XP per message as needed)
         xp_per_message = 5
@@ -182,6 +182,8 @@ async def on_message(message):
         if user_data[user_id]["xp"] >= xp_threshold:
             user_data[user_id]["level"] += 1
             user_data[user_id]["xp"] = 0
+            user_data[user_id]["afk-reason"] = user_data[user_id]["afk-reason"]
+            user_data[user_id]["afk"] = user_data[user_id]["afk"] 
 
             # Send a level up message in the same channel
             await message.channel.send(f"Congratulations {message.author.mention}! You've reached Level {user_data[user_id]['level']}!")
@@ -223,7 +225,7 @@ async def afk(ctx, *, reason=None):
 
         save_user_data(data)
 
-        await ctx.send(f'{ctx.author.mention} is now AFK.')
+        await ctx.respond(f'{ctx.author.mention} is now AFK.')
 
 
 @bot.slash_command(name="afk", guild_ids=[1130925161579806751], description="Set your AFK status.")
@@ -236,13 +238,14 @@ async def afk(ctx, reason=None):
 
         user_data[user_id] = {
             'afk': 'yes',
+            'level': user_data[user_id]['level'],
             'afk-reason': reason,
             'xp': user_data[user_id]['xp']
         }
 
         save_user_data(user_data)
 
-        await ctx.send(f'{ctx.author.mention} is now AFK.')
+        await ctx.respond(f'{ctx.author.mention} is now AFK.')
    
 def fetch_random_meme():
     url = "https://api.imgflip.com/get_memes"
@@ -279,7 +282,7 @@ async def get_joke(ctx):
         joke = fetch_random_joke()
 
         if joke:
-            await ctx.send(joke)
+            await ctx.respond(joke)
         else:
             await ctx.respond("Failed to fetch a random joke. Please try again later.")
 
@@ -410,7 +413,7 @@ async def giveaway(ctx, duration: int, prize: str):
 
         # Send the giveaway embed message
         embed = discord.Embed(title="🎉 Giveaway! 🎉", description=f"Prize: {prize}\nReact with 🎉 to participate!\nTime: {duration} minutes")
-        giveaway_msg = await ctx.send(embed=embed)
+        giveaway_msg = await ctx.respond(embed=embed)
         await giveaway_msg.add_reaction("🎉")
 
         # Initialize the participant count
@@ -442,10 +445,10 @@ async def giveaway(ctx, duration: int, prize: str):
             winner = random.choice(participants)
 
             # Announce the winner
-            await ctx.send(f"🎉 Congratulations to {winner.mention}! You won the {prize}!")
+            await ctx.respond(f"🎉 Congratulations to {winner.mention}! You won the {prize}!")
         else:
             # If no one participated, announce that the giveaway has ended
-            await ctx.send("🎉 Giveaway ended. No participants this time.")
+            await ctx.respond("🎉 Giveaway ended. No participants this time.")
 
 @bot.slash_command(name="g-roll", guild_ids=[1130925161579806751], description="Re-roll the giveaway winner.")
 async def g_roll(ctx, message_link: str):
@@ -464,13 +467,13 @@ async def g_roll(ctx, message_link: str):
                 winner = random.choice(participants)
 
                 # Announce the new winner
-                await ctx.send(f"🎉 Congratulations to {winner.mention}! You won the re-rolled giveaway!")
+                await ctx.respond(f"🎉 Congratulations to {winner.mention}! You won the re-rolled giveaway!")
 
             else:
                 # If no one participated, announce that the giveaway has no participants
-                await ctx.send("🎉 The re-rolled giveaway has ended. No participants this time.")
+                await ctx.respond("🎉 The re-rolled giveaway has ended. No participants this time.")
         except (discord.NotFound, ValueError):
-            await ctx.send("Invalid message link. Please provide a valid Discord message link.")
+            await ctx.respond("Invalid message link. Please provide a valid Discord message link.")
     
 bot_invite_link = "https://discord.com/api/oauth2/authorize?client_id=1130925454677782579&permissions=8&scope=bot"
 
@@ -479,7 +482,7 @@ async def invite(ctx):
     # Create the invite link as a markdown link
     em = discord.Embed(title="Invite",description="")
     em.add_field(name="Invite Link",value=f"[Click here to invite the bot!]({bot_invite_link})")
-    await ctx.send(embed=em)
+    await ctx.respond(embed=em)
 
 @bot.slash_command(name="help", guild_ids=[1130925161579806751], description="Display the list of available commands.")
 async def help(ctx):
@@ -519,14 +522,20 @@ async def help(ctx):
 
 @bot.slash_command(name="clearallafk", guild_ids=[1130925161579806751], description="Clears the afk status of every member.")
 async def clearallafk(ctx):
-    if any(role.id == RESTRICTED_ROLE_ID for role in ctx.author.roles):
-        user_data = load_user_data()
-        for user_id in user_data:
-            user_data[user_id]['afk'] = 'no'
-            user_data[user_id]['afk-reason'] = ''
-            user_data[user_id]['xp'] = user_data[user_id]['xp']
-        save_user_data(user_data)
-        await ctx.send("AFK status has been cleared for all members.")
+
+    if ctx.author.guild_permissions.manage_channels:
+
+        if any(role.id == RESTRICTED_ROLE_ID for role in ctx.author.roles):
+            user_data = load_user_data()
+            for user_id in user_data:
+                user_data[user_id]['afk'] = 'no'
+                user_data[user_id]['afk-reason'] = ''
+                user_data[user_id]['level'] = user_data[user_id]['level']
+                user_data[user_id]['xp'] = user_data[user_id]['xp']
+            save_user_data(user_data)
+            await ctx.respond("AFK status has been cleared for all members.")
+    else:
+        await ctx.respond("Can't use it, sorry")            
 
 
 @bot.event
@@ -556,10 +565,10 @@ async def echo(ctx, channel: discord.TextChannel, *, message: str):
             await channel.send(message, allowed_mentions=discord.AllowedMentions.none())
         else:
             # Handle the case where the message contains mentions
-            await ctx.send("Sorry, you are not allowed to include mentions in the echo command.")
+            await ctx.respond("Sorry, you are not allowed to include mentions in the echo command.")
     else:
         # Handle the case where the author doesn't have the restricted role
-        await ctx.send("Sorry, you don't have permission to use the echo command.")
+        await ctx.respond("Sorry, you don't have permission to use the echo command.")
 
 @bot.slash_command(name="manualpost", guild_ids=[1130925161579806751], description="Manually post a job opening.")
 async def manualpost(ctx, companyname: str, link: str):
@@ -583,14 +592,7 @@ async def clap(ctx, *, message: str):
         clapped_message = " 👏 ".join(message.split())
         await ctx.respond(clapped_message)
 
-
-@bot.slash_command(name="slowmode", guild_ids=[1130925161579806751], description="Set slow mode for the channel.")
-async def slowmode(ctx, channel: discord.TextChannel, duration: int):
-    if duration < 0 or duration > 21600:  # Max slow mode is 6 hours (21600 seconds)
-        await ctx.respond("Please provide a duration between 0 and 21600 seconds (6 hours).")
-    else:
-        await channel.edit(slowmode_delay=duration)
-        await ctx.respond(f"{channel.mention} has been set to slow mode with a duration of {duration} seconds.")
+ 
   
 
 
@@ -609,5 +611,5 @@ def has_mentions(text):
     # Check if the message contains mentions
     return bool(mention_pattern.search(text))
 
-bot.run("token")    
+bot.run("MTEzMDkyNTQ1NDY3Nzc4MjU3OQ.GxsbVQ.mI2nRinGKstXbonMjje1cy6oNCWWemLL5xwN2c")    
 
